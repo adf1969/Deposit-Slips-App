@@ -60,7 +60,7 @@
                 })
                 xmlFile.folder = destFolderId;
                 var xmlFileId = xmlFile.save();
-                */                 
+                */
                 // TEST - END
 
                 if (xml == 'Invalid Line Entry'){
