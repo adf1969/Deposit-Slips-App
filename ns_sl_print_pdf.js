@@ -235,6 +235,7 @@ define(['N/http','N/render', 'N/record', 'N/xml', 'N/format', 'N/file', 'N/searc
                       // sKey exists, sum the existing Amount and new Amount, leave the rest the same
                       arrChecksAndCashUnique[sKey].Amount +=
                         Number(parseFloat(arrChecksAndCash[i].Amount).toFixed(2));
+                      arrChecksAndCashUnique[sKey].Memo += ', ' + arrChecksAndCash[i].Memo
                   } else {
                       // sKey does NOT exist, add the full Object to Unique object
                       // Don't do this. That will just LINK the two, and then you will clobber arrChecksAndCash[i]...
@@ -250,9 +251,16 @@ define(['N/http','N/render', 'N/record', 'N/xml', 'N/format', 'N/file', 'N/searc
           }
 
           // Loop over the unique checks and add to arrChecks
+          var arrSummary = [];
+          // Add the Cash line-item to arrSummary array
+          if ('Cash' in arrChecksAndCashUnique) {
+              arrSummary.push(clone(arrChecksAndCashUnique['Cash']));
+          }
+          // Add all the Checks to the arrSummary array
           for (var sKey in arrChecksAndCashUnique) {
               if (arrChecksAndCashUnique[sKey].PaymentMethod == 'Check'){
                   arrChecks.push(arrChecksAndCashUnique[sKey]);
+                  arrSummary.push(clone(arrChecksAndCashUnique[sKey]));
               }
           }
 
@@ -296,6 +304,10 @@ define(['N/http','N/render', 'N/record', 'N/xml', 'N/format', 'N/file', 'N/searc
               var xml = '<?xml version="1.0"?> <!DOCTYPE pdf PUBLIC "-//big.faceless.org//report" "report-1.1.dtd">\n';
               xml += '<pdf>\n';
               xml += '<head>\n';
+              xml += '<style>';
+              xml += '.itemlist td.label { background-color: #C2C2C2; }';
+              xml += '.summary tr.label { background-color: #C2C2C2; }';
+              xml += '</style>';
               xml += '<macrolist>\n';
 
               // BOTTOM: Bottom of Stub including Bank Acct Name, Address, Bank+4
@@ -352,7 +364,9 @@ define(['N/http','N/render', 'N/record', 'N/xml', 'N/format', 'N/file', 'N/searc
               xml += '</td>\n';
 
               // -- TOP: RIGHT: Cash + 18 Checks + S1, S2 in 3 Columns 7 Rows each
-              xml += '<td colspan = "9"><table border = "1px solid #000000" border-top = "none"  font-size = "7pt"><tr style="border-top: 1px solid #000000;"><td style="background-color:#888888;" colspan = "1">Cash</td>\n';
+              xml += '<td colspan = "9">';
+              xml += '<table class="itemlist" border = "1px solid #000000" border-top = "none"  font-size = "7pt">';
+              xml += '<tr style="border-top: 1px solid #000000;"><td class="label" colspan = "1">Cash</td>\n';
               if (cashTotal > 0) {
                   xml += '<td align = "right" colspan = "10">' + '<span style="padding-left:40px">' + cashTotal + '</span>' + '</td></tr>\n';
               } else {
@@ -360,7 +374,8 @@ define(['N/http','N/render', 'N/record', 'N/xml', 'N/format', 'N/file', 'N/searc
               }
               // - TOP RIGHT: Left 7 Rows
               for (var i = 0; i < 6; i++) {
-                  xml += '<tr style="border-top: 1px solid #000000;"><td style="background-color:#888888;" colspan = "1">' + (i + 1) + '</td>\n';
+                  // style="background-color:#888888;"
+                  xml += '<tr style="border-top: 1px solid #000000;"><td class="label" colspan = "1">' + (i + 1) + '</td>\n';
                   if (!valueIsEmpty(arrChecks[i])) {
                       xml += '<td align = "right" colspan = "10">' + '<span style="padding-left:40px">' + parseFloat(arrChecks[i].Amount).toFixed(2) + '</span>' + '</td></tr>\n';
                   } else {
@@ -371,9 +386,9 @@ define(['N/http','N/render', 'N/record', 'N/xml', 'N/format', 'N/file', 'N/searc
               xml += '</td>\n';
 
               // - TOP: RIGHT: Middle 7 Rows
-              xml += '<td colspan = "9"><table border = "1px solid #000000" border-top = "none"  font-size = "7pt">\n';
+              xml += '<td colspan = "9"><table class="itemlist" border = "1px solid #000000" border-top = "none"  font-size = "7pt">\n';
               for (var i = 6; i < 13; i++) {
-                  xml += '<tr style="border-top: 1px solid #000000;"><td style="background-color:#888888;" colspan = "1">' + (i + 1) + '</td>\n';
+                  xml += '<tr style="border-top: 1px solid #000000;"><td class="label" colspan = "1">' + (i + 1) + '</td>\n';
                   if (!valueIsEmpty(arrChecks[i])) {
                       xml += '<td align = "right" colspan = "10">' + '<span style="padding-left:40px">' + parseFloat(arrChecks[i].Amount).toFixed(2) + '</span>' + '</td></tr>\n';
                   } else {
@@ -384,19 +399,19 @@ define(['N/http','N/render', 'N/record', 'N/xml', 'N/format', 'N/file', 'N/searc
               xml += '</td>\n';
 
               // - TOP: RIGHT: Right 7 Rows
-              xml += '<td colspan = "9"><table border = "1px solid #000000" border-top = "none" font-size = "7pt">\n';
+              xml += '<td colspan = "9"><table class="itemlist" border = "1px solid #000000" border-top = "none" font-size = "7pt">\n';
               for (var i = 13; i < 18; i++) {
-                  xml += '<tr style="border-top: 1px solid #000000;"><td style="background-color:#888888;" colspan = "1">' + (i + 1) + '</td>\n';
+                  xml += '<tr style="border-top: 1px solid #000000;"><td class="label" colspan = "1">' + (i + 1) + '</td>\n';
                   if (!valueIsEmpty(arrChecks[i])) {
                       xml += '<td align = "right" colspan = "10">' + '<span style="padding-left:40px">' + parseFloat(arrChecks[i].Amount).toFixed(2) + '</span>' + '</td></tr>\n';
                   } else {
                       xml += '<td align = "right" colspan = "10"><span style="padding-left:55px">&nbsp;</span></td></tr>\n';
                   }
               }
-              xml += '<tr style="border-top: 1px solid #000000;"><td style="background-color:#888888;" colspan = "1">' + 'S1' + '</td>\n';
+              xml += '<tr style="border-top: 1px solid #000000;"><td class="label" colspan = "1">' + 'S1' + '</td>\n';
               xml += '<td align = "right" colspan = "10">' + '<span style="padding-left:40px">' + parseFloat(cashAndCheckTotal).toFixed(2) + '</span>' + '</td></tr>\n';
 
-              xml += '<tr style="border-top: 1px solid #000000;"><td style="background-color:#888888;" colspan = "1">' + 'S2' + '</td>\n';
+              xml += '<tr style="border-top: 1px solid #000000;"><td class="label" colspan = "1">' + 'S2' + '</td>\n';
               xml += '<td align = "right" colspan = "10">' + '<span style="padding-left:40px">' + parseFloat(cashBackTotal).toFixed(2) + '</span>' + '</td></tr>\n';
 
               xml += '</table>\n';
@@ -446,25 +461,26 @@ define(['N/http','N/render', 'N/record', 'N/xml', 'N/format', 'N/file', 'N/searc
 
               // MID: Middle: Table with list of Checks/Cash Detail: Check No, Pmt Method, Rcvd From, Memo, Amount
               //xml += '<table width="100%" align="center" cellpadding="0" cellspacing="0" style="text-align:left; border:1px solid #000000; border-right: none; font-size: 7pt">\n';
-              xml += '<table width="100%" align="center" cellspacing="0" style="text-align:left; border:1px solid #000000; border-right: none; font-size: 7pt">\n';
+              xml += '<table class="summary" width="100%" align="center" cellspacing="0" style="text-align:left; border:1px solid #000000; border-right: none; font-size: 7pt">\n';
               xml += '<thead>\n';
-              xml += '<tr style="background-color:#888888;">\n';
-              xml += '<th align = "center" style="border-right:1px solid #000000;">Chk No.</th>\n';
-              xml += '<th align = "center" style="border-right:1px solid #000000; width = 10%">PmtMethod</th>\n';
-              xml += '<th align = "center" style="border-right:1px solid #000000;">Rcd From</th>\n';
+              xml += '<tr class="label" >\n';
+              xml += '<th align = "center" style="border-right:1px solid #000000; width: 12%;">Chk No.</th>\n';
+              xml += '<th align = "center" style="border-right:1px solid #000000; width = 12%">PmtMethod</th>\n';
+              xml += '<th align = "center" style="border-right:1px solid #000000; width: 180px;">Rcd From</th>\n';
               xml += '<th align = "center" style="border-right:1px solid #000000;">Memo</th>\n';
-              xml += '<th align = "center" style="border-right:1px solid #000000;">Amount</th>\n';
+              xml += '<th align = "center" style="border-right:1px solid #000000; width: 15%;">Amount</th>\n';
               xml += '</tr>\n';
               xml += '</thead>\n';
               xml += '<tbody>\n';
-              for (var i = 0; i < arrChecksAndCash.length; i++) {
+              var arrSum = arrSummary;
+              for (var i = 0; i < arrSum.length; i++) {
 
                   xml += '<tr rowspan = "1">\n';
-                  xml += '<td  height = "1px" align = "left" style="border-right:1px solid #000000;">' + arrChecksAndCash[i].CheckNumber + '</td>\n';
-                  xml += '<td  height = "1px" align = "left" style="border-right:1px solid #000000; width: 10%">' + arrChecksAndCash[i].PaymentMethod + '</td>\n';
-                  xml += '<td  height = "1px" align = "left" style="border-right:1px solid #000000;">' + arrChecksAndCash[i].ReceivedFrom + '</td>\n';
-                  xml += '<td  height = "1px" align = "left" style="border-right:1px solid #000000;">' + arrChecksAndCash[i].Memo + '</td>\n';
-                  xml += '<td  height = "1px" align = "right" style="border-right:1px solid #000000;">' + parseFloat(arrChecksAndCash[i].Amount).toFixed(2) + '</td>\n';
+                  xml += '<td  height = "1px" align = "left" style="border-right:1px solid #000000;">' + arrSum[i].CheckNumber + '</td>\n';
+                  xml += '<td  height = "1px" align = "left" style="border-right:1px solid #000000; width: 10%">' + arrSum[i].PaymentMethod + '</td>\n';
+                  xml += '<td  height = "1px" align = "left" style="border-right:1px solid #000000;">' + arrSum[i].ReceivedFrom + '</td>\n';
+                  xml += '<td  height = "1px" align = "left" style="border-right:1px solid #000000;">' + truncateString(arrSum[i].Memo, 170) + '</td>\n';
+                  xml += '<td  height = "1px" align = "right" style="border-right:1px solid #000000;">' + parseFloat(arrSum[i].Amount).toFixed(2) + '</td>\n';
                   xml += '</tr>\n';
 
               }
@@ -961,6 +977,14 @@ define(['N/http','N/render', 'N/record', 'N/xml', 'N/format', 'N/file', 'N/searc
           }
 
           throw new Error("Unable to copy obj! Its type isn't supported.");
+      }
+
+      function truncateString(string, limit) {
+          if (string.length > limit) {
+              return string.substring(0, limit) + "..."
+          } else {
+              return string
+          }
       }
 
       /*
