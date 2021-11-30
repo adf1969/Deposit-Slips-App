@@ -425,12 +425,24 @@ define(['N/http','N/render', 'N/record', 'N/xml', 'N/format', 'N/file', 'N/searc
                 escapeXml(avcDsResult.getValue('custrecord_avc_ds_account_name')) + '</b>' + '<br/>';
               if (!valueIsEmpty(avcDsResult.getValue('custrecord_avc_ds_account_desc_1'))) {
                   xml += '<b>' + escapeXml(avcDsResult.getValue('custrecord_avc_ds_account_desc_1')) + '</b><br/>';
+              } else {
+                  // Add Blank Line
+                  xml += '<br/>'
               }
               if (!valueIsEmpty(avcDsResult.getValue('custrecord_avc_ds_account_desc_2'))) {
                   xml += '<b>' + escapeXml(avcDsResult.getValue('custrecord_avc_ds_account_desc_2')) + '</b><br/>';
+              } else {
+                  // Add Blank Line
+                  xml += '<br/>'
               }
-              xml +=  escapeXml(avcDsResult.getValue('custrecord_avc_ds_account_address_line_1')) + '<br/>' +
-                escapeXml(avcDsResult.getValue('custrecord_avc_ds_account_address_line_2'));
+              xml +=  escapeXml(avcDsResult.getValue('custrecord_avc_ds_account_address_line_1')) + '<br/>';
+              if (!valueIsEmpty(avcDsResult.getValue('custrecord_avc_ds_account_address_line_2'))) {
+                  escapeXml(avcDsResult.getValue('custrecord_avc_ds_account_address_line_2')); + '<br/>';
+              } else {
+                  // Add Blank Line
+                  xml += '<br/>'
+              }
+
               xml +=  '</td>\n';
               xml += '<td align = "center" colspan = "9">' + '<br/>Number of Deposits: ' + depositCount + '</td>\n';
               xml += '<td align = "right" colspan = "9">' + '<br/>Total Deposit: ' + totally.toFixed(2) + '</td>\n';
@@ -925,6 +937,11 @@ define(['N/http','N/render', 'N/record', 'N/xml', 'N/format', 'N/file', 'N/searc
       function getLocResult(depositRecord) {
           var stLogTitle = 'getLocResult';
           var locId = depositRecord.getValue('location');
+          log.debug(stLogTitle + ':locId', locId);
+          if (!locId) {
+              log.debug(stLogTitle + '', 'Warning: No Location Found!');
+              return false;
+          }
           var dsSearch = search.create({
               type : search.Type.LOCATION,
               columns: [
