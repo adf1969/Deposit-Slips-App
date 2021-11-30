@@ -173,6 +173,19 @@ define(['N/http','N/render', 'N/record', 'N/xml', 'N/format', 'N/file', 'N/searc
       function generateXml(id) {
           var stLogTitle = 'generateXml';
           var depositRecord = record.load({ type: record.Type.DEPOSIT, id: id });
+          // ADF: The following fixed NOTHING, Going back to above method.
+          /*
+          var depositRecord = record.load({
+              type: record.Type.DEPOSIT,
+              id: id,
+              defaultValues: {
+                    account: '2',
+                    disablepaymentfilters: 'true'
+                }
+          });
+          */
+
+          log.debug(stLogTitle + ':depositRecord', JSON.stringify(depositRecord));
           var totally = depositRecord.getValue('total');
           var accountId = depositRecord.getValue({
               fieldId: 'account'
@@ -189,7 +202,7 @@ define(['N/http','N/render', 'N/record', 'N/xml', 'N/format', 'N/file', 'N/searc
           var fulldate = depositRecord.getValue('trandate');
           var tranDate = format.format({value:fulldate, type:format.Type.DATE});
           var arrChecksAndCash = getChecksAndCash(depositRecord);
-          log.debug(stLogTitle, 'arrChecksAndCash: ' + JSON.stringify(arrChecksAndCash));
+          log.debug(stLogTitle + ':arrChecksAndCash', JSON.stringify(arrChecksAndCash));
           var cashTotal = calculateCashTotal(arrChecksAndCash);
           var depositCount =0;
           if (cashTotal > 0){
@@ -335,7 +348,7 @@ define(['N/http','N/render', 'N/record', 'N/xml', 'N/format', 'N/file', 'N/searc
 
               xml += '<macro id="bg_micr">\n';
               if (bMicrInBG) {
-              xml += '<p font-size = "16pt" align = "center" margin-top = "250px" margin-bottom = "0px">' + '<br/><br/>' + ' <span font-family="micr-font">' +
+              xml += '<p font-size = "16pt" align = "center" margin-top = "220px" margin-bottom = "0px">' + '<br/><br/>' + ' <span font-family="micr-font">' +
                 escapeXml(avcDsResult.getValue('custrecord_avc_ds_bankacct_micr_data')) + '</span>' + '</p>\n';
               }
               xml += '</macro>\n'
@@ -423,6 +436,8 @@ define(['N/http','N/render', 'N/record', 'N/xml', 'N/format', 'N/file', 'N/searc
               xml += '<table width="100%" align="center" style="font-size:11pt;">\n';
               xml += '<tr rowspan = "4">' + '<td align = "left" colspan = "15">' + '<b>' +
                 escapeXml(avcDsResult.getValue('custrecord_avc_ds_account_name')) + '</b>' + '<br/>';
+              log.debug(stLogTitle + ':getValue:custrecord_avc_ds_account_desc_1', avcDsResult.getValue('custrecord_avc_ds_account_desc_1'));
+              log.debug(stLogTitle + ':valueIsEmpty:custrecord_avc_ds_account_desc_1', valueIsEmpty(avcDsResult.getValue('custrecord_avc_ds_account_desc_1')));
               if (!valueIsEmpty(avcDsResult.getValue('custrecord_avc_ds_account_desc_1'))) {
                   xml += '<b>' + escapeXml(avcDsResult.getValue('custrecord_avc_ds_account_desc_1')) + '</b><br/>';
               } else {
@@ -436,8 +451,10 @@ define(['N/http','N/render', 'N/record', 'N/xml', 'N/format', 'N/file', 'N/searc
                   xml += '<br/>'
               }
               xml +=  escapeXml(avcDsResult.getValue('custrecord_avc_ds_account_address_line_1')) + '<br/>';
+              log.debug(stLogTitle + ':getValue:custrecord_avc_ds_account_address_line_2', avcDsResult.getValue('custrecord_avc_ds_account_address_line_2'));
+              log.debug(stLogTitle + ':valueIsEmpty:custrecord_avc_ds_account_address_line_2', valueIsEmpty(avcDsResult.getValue('custrecord_avc_ds_account_address_line_2')));
               if (!valueIsEmpty(avcDsResult.getValue('custrecord_avc_ds_account_address_line_2'))) {
-                  escapeXml(avcDsResult.getValue('custrecord_avc_ds_account_address_line_2')); + '<br/>';
+                  xml += escapeXml(avcDsResult.getValue('custrecord_avc_ds_account_address_line_2')); + '<br/>';
               } else {
                   // Add Blank Line
                   xml += '<br/>'
@@ -524,7 +541,20 @@ define(['N/http','N/render', 'N/record', 'N/xml', 'N/format', 'N/file', 'N/searc
               sublistId: 'other'
           });
 
+          var iErrorJournalLines = 0;
+          var sListId = 'payment';
           for (var i=0; i<paymentsLineCount; i++){
+              // ADFMOD: This is a TOTAL HACK! I don't know why, but for some reason, the record.load() for the
+              //  Deposit, is loading old Journal Entries as LINE ITEMS!
+              //  This makes sure we don't try to process them, but this makes NO SENSE
+              //  For now, this should fix it, until I can figure out what is going on.
+              var type = recDeposit.getSublistValue({
+                  sublistId: sListId,
+                  fieldId: 'type',
+                  line: i
+              });
+              if (type == 'Journal') { iErrorJournalLines++; continue; }
+
               var checkNumber = recDeposit.getSublistValue({
                   sublistId: 'payment',
                   fieldId: 'docnumber',
@@ -568,7 +598,16 @@ define(['N/http','N/render', 'N/record', 'N/xml', 'N/format', 'N/file', 'N/searc
               arrReturn.push(objPayments);
           }
 
+          sListId = 'other';
           for (var j=0; j<otherDepositLineCount; j++){
+              // ADFMOD: Hack. Notes above.
+              var type = recDeposit.getSublistValue({
+                  sublistId: sListId,
+                  fieldId: 'type',
+                  line: i
+              });
+              if (type == 'Journal') { iErrorJournalLines++; continue; }
+
               var checkNumber = recDeposit.getSublistValue({
                   sublistId: 'other',
                   fieldId: 'refnum',
@@ -610,6 +649,11 @@ define(['N/http','N/render', 'N/record', 'N/xml', 'N/format', 'N/file', 'N/searc
               };
 
               arrReturn.push(objPayments);
+          }
+          if (iErrorJournalLines > 0) {
+              // We had spurious Journal records in this Deposit, output some Error code to flag this.
+              log.error(stLogTitle, iErrorJournalLines + ': Spurious Journal Records found in this Deposit Record. All excluded from Deposit Slip.')
+              log.error(stLogTitle + ':recDeposit', JSON.stringify(recDeposit));
           }
           log.debug(stLogTitle, '--Exit--');
 
