@@ -166,8 +166,17 @@ define(['N/http','N/render', 'N/record', 'N/xml', 'N/format', 'N/file', 'N/searc
 
               // context.response.renderPdf({xmlString: xml});
           }
-          catch(error){
-              log.debug(stLogTitle, JSON.stringify(error));
+          catch(err){
+              log.error(stLogTitle, JSON.stringify(err));
+              var lineError = error.create({
+                  name: 'Error_Creating_XML_File',
+                  message: 'There was an error creating the XML File.',
+                  notifyOff: true,
+                  error: err
+              });
+              context.response.write(JSON.stringify(lineError));
+              //context.response.write("</br></br>");
+              //context.response.write(JSON.stringify(err));
           }
       }
       function generateXml(id) {
@@ -348,7 +357,7 @@ define(['N/http','N/render', 'N/record', 'N/xml', 'N/format', 'N/file', 'N/searc
 
               xml += '<macro id="bg_micr">\n';
               if (bMicrInBG) {
-              xml += '<p font-size = "16pt" align = "center" margin-top = "220px" margin-bottom = "0px">' + '<br/><br/>' + ' <span font-family="micr-font">' +
+              xml += '<p font-size = "20pt" align = "center" margin-top = "200px" margin-bottom = "0px">' + '<br/><br/>' + ' <span font-family="micr-font">' +
                 escapeXml(avcDsResult.getValue('custrecord_avc_ds_bankacct_micr_data')) + '</span>' + '</p>\n';
               }
               xml += '</macro>\n'
@@ -381,7 +390,7 @@ define(['N/http','N/render', 'N/record', 'N/xml', 'N/format', 'N/file', 'N/searc
               xml += '<table class="itemlist" border = "1px solid #000000" border-top = "none"  font-size = "7pt">';
               xml += '<tr style="border-top: 1px solid #000000;"><td class="label" colspan = "1">Cash</td>\n';
               if (cashTotal > 0) {
-                  xml += '<td align = "right" colspan = "10">' + '<span style="padding-left:40px">' + cashTotal + '</span>' + '</td></tr>\n';
+                  xml += '<td align = "right" colspan = "10">' + '<span style="padding-left:40px">' + numberWithCommas(cashTotal) + '</span>' + '</td></tr>\n';
               } else {
                   xml += '<td align = "right" colspan = "10">' + '<span style="padding-left:55px">' + '&nbsp;' + '</span>' + '</td></tr>\n';
               }
@@ -390,7 +399,7 @@ define(['N/http','N/render', 'N/record', 'N/xml', 'N/format', 'N/file', 'N/searc
                   // style="background-color:#888888;"
                   xml += '<tr style="border-top: 1px solid #000000;"><td class="label" colspan = "1">' + (i + 1) + '</td>\n';
                   if (!valueIsEmpty(arrChecks[i])) {
-                      xml += '<td align = "right" colspan = "10">' + '<span style="padding-left:40px">' + parseFloat(arrChecks[i].Amount).toFixed(2) + '</span>' + '</td></tr>\n';
+                      xml += '<td align = "right" colspan = "10">' + '<span style="padding-left:40px">' + numberWithCommas(parseFloat(arrChecks[i].Amount).toFixed(2)) + '</span>' + '</td></tr>\n';
                   } else {
                       xml += '<td align = "right" colspan = "10">' + '<span style="padding-left:55px">' + '&nbsp;' + '</span>' + '</td></tr>\n';
                   }
@@ -403,7 +412,7 @@ define(['N/http','N/render', 'N/record', 'N/xml', 'N/format', 'N/file', 'N/searc
               for (var i = 6; i < 13; i++) {
                   xml += '<tr style="border-top: 1px solid #000000;"><td class="label" colspan = "1">' + (i + 1) + '</td>\n';
                   if (!valueIsEmpty(arrChecks[i])) {
-                      xml += '<td align = "right" colspan = "10">' + '<span style="padding-left:40px">' + parseFloat(arrChecks[i].Amount).toFixed(2) + '</span>' + '</td></tr>\n';
+                      xml += '<td align = "right" colspan = "10">' + '<span style="padding-left:40px">' + numberWithCommas(parseFloat(arrChecks[i].Amount).toFixed(2)) + '</span>' + '</td></tr>\n';
                   } else {
                       xml += '<td align = "right" colspan = "10"><span style="padding-left:55px">&nbsp;</span></td></tr>\n';
                   }
@@ -416,16 +425,16 @@ define(['N/http','N/render', 'N/record', 'N/xml', 'N/format', 'N/file', 'N/searc
               for (var i = 13; i < 18; i++) {
                   xml += '<tr style="border-top: 1px solid #000000;"><td class="label" colspan = "1">' + (i + 1) + '</td>\n';
                   if (!valueIsEmpty(arrChecks[i])) {
-                      xml += '<td align = "right" colspan = "10">' + '<span style="padding-left:40px">' + parseFloat(arrChecks[i].Amount).toFixed(2) + '</span>' + '</td></tr>\n';
+                      xml += '<td align = "right" colspan = "10">' + '<span style="padding-left:40px">' + numberWithCommas(parseFloat(arrChecks[i].Amount).toFixed(2)) + '</span>' + '</td></tr>\n';
                   } else {
                       xml += '<td align = "right" colspan = "10"><span style="padding-left:55px">&nbsp;</span></td></tr>\n';
                   }
               }
               xml += '<tr style="border-top: 1px solid #000000;"><td class="label" colspan = "1">' + 'S1' + '</td>\n';
-              xml += '<td align = "right" colspan = "10">' + '<span style="padding-left:40px">' + parseFloat(cashAndCheckTotal).toFixed(2) + '</span>' + '</td></tr>\n';
+              xml += '<td align = "right" colspan = "10">' + '<span style="padding-left:40px">' + numberWithCommas(parseFloat(cashAndCheckTotal).toFixed(2)) + '</span>' + '</td></tr>\n';
 
               xml += '<tr style="border-top: 1px solid #000000;"><td class="label" colspan = "1">' + 'S2' + '</td>\n';
-              xml += '<td align = "right" colspan = "10">' + '<span style="padding-left:40px">' + parseFloat(cashBackTotal).toFixed(2) + '</span>' + '</td></tr>\n';
+              xml += '<td align = "right" colspan = "10">' + '<span style="padding-left:40px">' + numberWithCommas(parseFloat(cashBackTotal).toFixed(2)) + '</span>' + '</td></tr>\n';
 
               xml += '</table>\n';
               xml += '</td>\n';
@@ -462,7 +471,7 @@ define(['N/http','N/render', 'N/record', 'N/xml', 'N/format', 'N/file', 'N/searc
 
               xml +=  '</td>\n';
               xml += '<td align = "center" colspan = "9">' + '<br/>Number of Deposits: ' + depositCount + '</td>\n';
-              xml += '<td align = "right" colspan = "9">' + '<br/>Total Deposit: ' + totally.toFixed(2) + '</td>\n';
+              xml += '<td align = "right" colspan = "9">' + '<br/>Total Deposit: ' + numberWithCommas(totally.toFixed(2)) + '</td>\n';
               xml += '</tr></table>\n';
 
               // TOP: MICR DATA LINE
@@ -507,9 +516,11 @@ define(['N/http','N/render', 'N/record', 'N/xml', 'N/format', 'N/file', 'N/searc
                   xml += '<tr rowspan = "1">\n';
                   xml += '<td  height = "1px" align = "left" style="border-right:1px solid #000000;">' + arrSum[i].CheckNumber + '</td>\n';
                   xml += '<td  height = "1px" align = "left" style="border-right:1px solid #000000; width: 10%">' + arrSum[i].PaymentMethod + '</td>\n';
-                  xml += '<td  height = "1px" align = "left" style="border-right:1px solid #000000;">' + arrSum[i].ReceivedFrom + '</td>\n';
-                  xml += '<td  height = "1px" align = "left" style="border-right:1px solid #000000;">' + truncateString(arrSum[i].Memo, 170) + '</td>\n';
-                  xml += '<td  height = "1px" align = "right" style="border-right:1px solid #000000;">' + parseFloat(arrSum[i].Amount).toFixed(2) + '</td>\n';
+                  xml += '<td  height = "1px" align = "left" style="border-right:1px solid #000000;">' + escapeXml(arrSum[i].ReceivedFrom) + '</td>\n';
+                  // The next line will FAIL if there is an & in the Rcd From Name - left here for testing:
+                  // xml += '<td  height = "1px" align = "left" style="border-right:1px solid #000000;">' + arrSum[i].ReceivedFrom + '</td>\n';
+                  xml += '<td  height = "1px" align = "left" style="border-right:1px solid #000000;">' + escapeXml(truncateString(arrSum[i].Memo, 170)) + '</td>\n';
+                  xml += '<td  height = "1px" align = "right" style="border-right:1px solid #000000;">' + numberWithCommas(parseFloat(arrSum[i].Amount).toFixed(2)) + '</td>\n';
                   xml += '</tr>\n';
 
               }
@@ -519,7 +530,7 @@ define(['N/http','N/render', 'N/record', 'N/xml', 'N/format', 'N/file', 'N/searc
               xml += '<td style="border-right:1px solid #000000;">&nbsp;</td>\n';
               xml += '<td style="border-right:1px solid #000000;">&nbsp;</td>\n';
               xml += '<td align = "left" style="border-right:1px solid #000000;">' + '<br/><br/><br/>' + 'Deposit Subtotal:<br/><br/>' + 'Less Cash Back:<br/><br/>' + '<b>Deposit Total:</b>' + '</td>\n';
-              xml += '<td align = "right" style="border-right:1px solid #000000;">' + '<br/><br/><br/>' + cashAndCheckTotal + '<br/><br/>' + cashBackTotal + '<br/><br/>' + '<b>' + totally.toFixed(2) + '</b>' + '</td>\n';
+              xml += '<td align = "right" style="border-right:1px solid #000000;">' + '<br/><br/><br/>' + numberWithCommas(cashAndCheckTotal) + '<br/><br/>' + numberWithCommas(cashBackTotal) + '<br/><br/>' + '<b>' + numberWithCommas(totally.toFixed(2)) + '</b>' + '</td>\n';
               xml += '</tr>\n';
 
 
@@ -1046,6 +1057,11 @@ define(['N/http','N/render', 'N/record', 'N/xml', 'N/format', 'N/file', 'N/searc
           } else {
               return string
           }
+      }
+
+      // Code from here: https://stackoverflow.com/questions/2901102/how-to-print-a-number-with-commas-as-thousands-separators-in-javascript
+      function numberWithCommas(x) {
+          return x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
       }
 
       /*
